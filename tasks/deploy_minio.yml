@@ -1,0 +1,25 @@
+---
+- name: Ensure that the Docker data directory exists.
+  file:
+    path: "{{ DOCKER_DATA_DIR }}{{ MINIO_DATA_FOLDER }}"
+    state: directory
+
+- name: Ensure that the Minio container is running.
+  docker_container:
+    name: minio-server-1
+    image:  minio/minio:RELEASE.2019-10-12T01-39-57Z
+    command: server /data
+    state: started
+    ports:
+      - "9000:9000"
+    env: 
+      MINIO_ACCESS_KEY: "{{ MINIO_ACCESS_KEY }}"
+      MINIO_SECRET_KEY: "{{ MINIO_SECRET_KEY }}"
+    volumes:
+      - "{{ DOCKER_DATA_DIR }}{{ MINIO_DATA_FOLDER }}:/data:rw"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://{{ MINIO_HOSTNAME }}:9000"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
